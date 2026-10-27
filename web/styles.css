@@ -1,0 +1,22 @@
+* { box-sizing: border-box; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+body { margin: 0; background: #0b1026; color: #e6e6e6; }
+.container { max-width: 900px; margin: 0 auto; padding: 24px; }
+header { margin-bottom: 24px; }
+header h1 { margin: 0; }
+header p { margin: 4px 0 0; color: #9aa0c3; }
+.card { background: #12182a; border: 1px solid #232a4a; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+.row { display: flex; flex-direction: column; margin-bottom: 12px; }
+label { margin-bottom: 6px; color: #c9ccef; }
+input, select { padding: 8px; border-radius: 6px; border: 1px solid #2a315f; background: #0e1430; color: #e6e6e6; }
+button { padding: 10px 16px; border-radius: 6px; border: 1px solid #4f7cff; background: #3a6bff; color: white; cursor: pointer; }
+button:hover { background: #4f7cff; }
+.job { border: 1px solid #2a315f; border-radius: 6px; padding: 10px; margin-bottom: 10px; }
+.job-header { display: flex; justify-content: space-between; }
+.badge { padding: 2px 8px; border-radius: 999px; background: #2a315f; }
+.badge.running { background: #b58b00; }
+.badge.finished { background: #1f8f3f; }
+.badge.failed { background: #a33b3b; }
+a { color: #7aa2ff; }
+details { margin-bottom: 12px; }
+summary { cursor: pointer; color: #c9ccef; }
+#warnings { white-space: pre-wrap; color: #f5b700; }

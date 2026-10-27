@@ -1,0 +1,47 @@
+version: '3.8'
+services:
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+  gotenberg:
+    image: gotenberg/gotenberg:8
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+  api:
+    build: .
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis
+      - gotenberg
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - GOTENBERG_URL=http://gotenberg:3000
+  worker:
+    build: .
+    command: rq worker doc-jobs --url redis://redis:6379/0
+    volumes:
+      - .:/app
+    depends_on:
+      - redis
+      - gotenberg
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - GOTENBERG_URL=http://gotenberg:3000
+  streamlit:
+    build: .
+    command: streamlit run streamlit_app.py --server.port 8501 --server.address 0.0.0.0
+    volumes:
+      - .:/app
+    ports:
+      - "8501:8501"
+    depends_on:
+      - api
+    environment:
+      - DOC_CONVERTER_API=http://api:8000
+

@@ -1,0 +1,44 @@
+[project]
+name = "doc-converter"
+version = "0.1.0"
+description = "Document format converter service with batch/ZIP and isolated workers"
+requires-python = ">=3.10"
+dependencies = [
+  "fastapi",
+  "uvicorn[standard]",
+  "python-multipart",
+  "pydantic",
+  "pydantic-settings",
+  "rq",
+  "redis",
+  "python-magic",
+  "filetype",
+  "PyMuPDF",
+  "pdf2docx",
+  "pdfplumber",
+  "camelot-py[cv]",
+  "python-pptx",
+  "openpyxl",
+  "pandas",
+  "pypandoc",
+  "beautifulsoup4",
+  "odfpy",
+  "weasyhtml",
+  "img2pdf",
+  "pdf2image",
+  "Pillow",
+  "reportlab",
+  "aiofiles",
+  "httpx",
+  "jinja2",
+  "rarfile",
+  "py7zr",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["tests"]

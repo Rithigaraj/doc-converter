@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Doc Converter</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Doc Converter</h1>
+      <p>PDF↔DOCX, Office↔PDF, Images↔PDF, HTML/TXT/RTF/ODT, CSV↔XLSX • Batch/ZIP • Warnings for complex layouts/scans</p>
+    </header>
+
+    <section class="card">
+      <h2>Upload</h2>
+      <form id="convertForm">
+        <div class="row">
+          <label>Files (or .ZIP)</label>
+          <input type="file" id="files" name="files" multiple required>
+        </div>
+        <div class="row">
+          <label>Convert to</label>
+          <select id="target_ext" name="target_ext">
+            <option value="docx">DOCX</option>
+            <option value="pdf">PDF</option>
+            <option value="xlsx">XLSX</option>
+            <option value="pptx">PPTX</option>
+            <option value="png">PNG (images)</option>
+            <option value="jpg">JPG (images)</option>
+            <option value="csv">CSV</option>
+          </select>
+        </div>
+        <details>
+          <summary>Options</summary>
+          <div class="row">
+            <label>DPI (PDF→Images)</label>
+            <input type="number" id="dpi" value="200" min="72" max="600">
+          </div>
+          <div class="row">
+            <label>Image quality (JPG)</label>
+            <input type="number" id="quality" value="90" min="10" max="100">
+          </div>
+        </details>
+        <button type="submit">Start Conversion</button>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>Jobs</h2>
+      <div id="jobs"></div>
+    </section>
+
+    <section class="card">
+      <h2>Warnings</h2>
+      <div id="warnings">No warnings yet.</div>
+    </section>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
