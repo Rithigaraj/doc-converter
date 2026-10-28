@@ -45,10 +45,11 @@ async function poll(jid, el) {
     if (warns.length) {
       warningsDiv.textContent = warns.map(w => '- ' + w).join('\n');
     }
-    body.innerHTML = files.map(f => {
+    body.innerHTML = `<div><a href="/api/download-all/${jid}" download>Download all (ZIP)</a></div>` + files.map(f => {
       const name = f.split('/').pop().split('\\').pop();
-      return `<div><a href="/api/download/${name}">${name}</a></div>`;
+      return `<div><a href="/api/download/${name}" download>${name}</a></div>`;
     }).join('');
+
     return;
   }
   if (status === 'failed') {
