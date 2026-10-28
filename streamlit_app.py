@@ -76,11 +76,12 @@ with col2:
                         if warns:
                             st.warning("\n".join(warns))
                         dl_all = f"{api_base}/api/download-all/{jid}"
-                        st.link_button("Download all (ZIP)", dl_all)
+                        st.markdown(f"[Download all (ZIP)]({dl_all})")
                         for fp in files_res:
                             name = Path(fp).name
                             dl = f"{api_base}/api/download/{name}"
-                            st.link_button(f"Download {name}", dl)
+                            st.markdown(f"[Download {name}]({dl})")
+
 
                     elif status == "failed":
                         st.error(data.get("meta", {}).get("error", "Failed"))
