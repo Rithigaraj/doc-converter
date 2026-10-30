@@ -1,6 +1,6 @@
 from pathlib import Path
 from typing import Any
-
+import openpyxl
 import pdfplumber
 
 from app.utils.detect import is_scanned_pdf
@@ -12,44 +12,50 @@ class PdfToXlsxConverter(BaseConverter):
 
     def convert(self, input_path: Path, output_path: Path, options: dict[str, Any] | None = None) -> ConvertResult:
         options = options or {}
-        warnings = []
+        warnings: list[str] = []
         try:
             if is_scanned_pdf(input_path):
                 warnings.append(
                     "This appears to be a scanned/image-based PDF. Table extraction may be incomplete. Consider OCR."
                 )
+
+            wb = openpyxl.Workbook()
+            ws = wb.active
+            ws.title = "Extracted Data"
+
+            has_tables = False
+            current_row = 1
+
             with pdfplumber.open(str(input_path)) as pdf:
-                tables = []
-                for page in pdf.pages:
-                    tables.extend(page.extract_tables() or [])
-            if not tables:
-                warnings.append("No tables detected by pdfplumber. Output may be limited or require manual extraction/validation.")
-            # try to write simple xlsx
-            try:
-                import openpyxl
+                for page_idx, page in enumerate(pdf.pages):
+                    tables = page.extract_tables() or []
+                    if tables:
+                        has_tables = True
+                        for table in tables:
+                            for row_data in table:
+                                for col_idx, val in enumerate(row_data or []):
+                                    ws.cell(row=current_row, column=col_idx + 1, value=str(val) if val is not None else "")
+                                current_row += 1
+                            current_row += 1  # Blank line between tables
+                    else:
+                        # Fallback: extract text lines and place in sheet
+                        text = page.extract_text() or ""
+                        if text.strip():
+                            for line in text.splitlines():
+                                parts = [p.strip() for p in line.split("\t") if p.strip()] or [line.strip()]
+                                for col_idx, val in enumerate(parts):
+                                    ws.cell(row=current_row, column=col_idx + 1, value=val)
+                                current_row += 1
+                            current_row += 1
 
-                wb = openpyxl.Workbook()
-                ws = wb.active
-                ws.title = "Sheet1"
-                row = 1
-                for t in tables:
-                    for r in t:
-                        for cidx, val in enumerate(r or []):
-                            ws.cell(row=row, column=cidx + 1, value=val)
-                        row += 1
-                    row += 1  # blank line between tables
-                wb.save(str(output_path))
-            except Exception:
-                # fallback minimal
-                import pandas as pd
+            if not has_tables:
+                warnings.append("No explicit grid tables detected; text lines extracted into spreadsheet.")
+            else:
+                warnings.append("Tables detected and extracted into spreadsheet.")
 
-                all_rows = []
-                for t in tables:
-                    for r in t:
-                        all_rows.append(r)
-                df = pd.DataFrame(all_rows)
-                df.to_excel(str(output_path), index=False)
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            wb.save(str(output_path))
             warnings.append("Complex tables/charts/layouts require validation. Best-effort extraction.")
-            return ConvertResult(ok=True, output_path=output_path, warnings=warnings, meta={"engine": "pdfplumber"})
+            return ConvertResult(ok=True, output_path=output_path, warnings=warnings, meta={"engine": "pdfplumber+openpyxl", "has_tables": has_tables})
         except Exception as e:
-            return ConvertResult(ok=False, error=str(e), warnings=warnings)
+            return ConvertResult(ok=False, error=f"PDF to XLSX conversion failed: {str(e)}", warnings=warnings)

@@ -1,0 +1,20 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.env
+
+# Storage
+uploads/*
+!uploads/.gitkeep
+outputs/*
+!outputs/.gitkeep
+tmp/*
+!tmp/.gitkeep
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

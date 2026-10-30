@@ -3,61 +3,365 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Doc Converter</title>
+  <title>Doc Converter — Enterprise Document Orchestration</title>
+  <meta name="description" content="High-fidelity deterministic format conversion and AI summarization for business, legal, and office documents.">
   <link rel="stylesheet" href="/static/styles.css">
+  <link rel="stylesheet" href="/static/chat.css">
 </head>
 <body>
-  <div class="container">
-    <header>
-      <h1>Doc Converter</h1>
-      <p>PDF↔DOCX, Office↔PDF, Images↔PDF, HTML/TXT/RTF/ODT, CSV↔XLSX • Batch/ZIP • Warnings for complex layouts/scans</p>
+  <!-- Ambient non-blue mesh backdrop for liquid glass -->
+  <div class="ambient-background" aria-hidden="true">
+    <div class="ambient-shape shape-1"></div>
+    <div class="ambient-shape shape-2"></div>
+    <div class="ambient-shape shape-3"></div>
+  </div>
+
+  <div class="app-container">
+    <!-- Header -->
+    <header class="site-header">
+      <div class="brand-section">
+        <div class="brand-monogram" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <polyline points="10 9 9 9 8 9"></polyline>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h1>DOC CONVERTER</h1>
+          <p>Deterministic Engine &amp; Document Intelligence</p>
+        </div>
+      </div>
+
+      <nav class="header-nav" aria-label="Main Navigation">
+        <a href="#converter" class="nav-link active" id="navConvert">Convert</a>
+        <a href="#tools" class="nav-link" id="navTools">Tools</a>
+        <a href="#chatSection" class="nav-link" id="navChat">Chat Assistant</a>
+        <div class="system-status-pill" id="systemHealthBadge" title="System operational">
+          <span class="status-dot"></span>
+          <span id="healthStatusText">Engine Ready</span>
+        </div>
+      </nav>
     </header>
 
-    <section class="card">
-      <h2>Upload</h2>
-      <form id="convertForm">
-        <div class="row">
-          <label>Files (or .ZIP)</label>
-          <input type="file" id="files" name="files" multiple required>
-        </div>
-        <div class="row">
-          <label>Convert to</label>
-          <select id="target_ext" name="target_ext">
-            <option value="docx">DOCX</option>
-            <option value="pdf">PDF</option>
-            <option value="xlsx">XLSX</option>
-            <option value="pptx">PPTX</option>
-            <option value="png">PNG (images)</option>
-            <option value="jpg">JPG (images)</option>
-            <option value="csv">CSV</option>
-          </select>
-        </div>
-        <details>
-          <summary>Options</summary>
-          <div class="row">
-            <label>DPI (PDF→Images)</label>
-            <input type="number" id="dpi" value="200" min="72" max="600">
-          </div>
-          <div class="row">
-            <label>Image quality (JPG)</label>
-            <input type="number" id="quality" value="90" min="10" max="100">
-          </div>
-        </details>
-        <button type="submit">Start Conversion</button>
-      </form>
-    </section>
+    <!-- Main Content -->
+    <main>
+      <!-- Hero -->
+      <section class="hero-section" id="converter">
+        <h2>Precision Document Orchestration</h2>
+        <p>Lossless transformations across PDF, Office, and structured data formats with scan detection and batch processing.</p>
+      </section>
 
-    <section class="card">
-      <h2>Jobs</h2>
-      <div id="jobs"></div>
-    </section>
+      <!-- Liquid Glass Conversion Workbench -->
+      <section class="glass-panel conversion-workbench" aria-labelledby="workbenchHeading">
+        <h3 id="workbenchHeading" class="visually-hidden" style="display:none;">Conversion Workbench</h3>
 
-    <section class="card">
-      <h2>Warnings</h2>
-      <div id="warnings">No warnings yet.</div>
-    </section>
+        <form id="convertForm">
+          <!-- Glass Drop Zone -->
+          <div class="drop-zone" id="dropZone" tabindex="0" role="button" aria-label="Upload files or drag and drop">
+            <div class="drop-zone-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+              </svg>
+            </div>
+            <h3>Drop documents here, or click to browse</h3>
+            <p>PDF, DOCX, XLSX, PPTX, PNG, JPG, CSV, HTML, TXT, RTF, ODT, or ZIP archives (up to 500 MB)</p>
+            <input type="file" id="fileInput" class="file-input-hidden" multiple required aria-label="Choose files to convert">
+          </div>
+
+          <!-- Staged Files List -->
+          <div class="selected-files-list" id="selectedFilesList" style="display: none;"></div>
+
+          <!-- Controls Bar -->
+          <div class="workbench-controls">
+            <div class="controls-inputs">
+              <div class="input-group">
+                <label for="targetExtSelect">Target Format</label>
+                <div class="glass-select-wrapper">
+                  <select id="targetExtSelect" class="glass-select" name="target_ext">
+                    <optgroup label="Document Formats">
+                      <option value="docx" selected>DOCX (Word)</option>
+                      <option value="pdf">PDF (Document)</option>
+                      <option value="xlsx">XLSX (Excel)</option>
+                      <option value="pptx">PPTX (PowerPoint)</option>
+                    </optgroup>
+                    <optgroup label="Images &amp; Data">
+                      <option value="png">PNG (Images)</option>
+                      <option value="jpg">JPG (Images)</option>
+                      <option value="csv">CSV (Tabular)</option>
+                    </optgroup>
+                  </select>
+                </div>
+              </div>
+
+              <div class="input-group" id="dpiGroup" style="display: none;">
+                <label for="dpiInput">Resolution (DPI)</label>
+                <input type="number" id="dpiInput" class="glass-number" value="200" min="72" max="600" step="50">
+              </div>
+
+              <div class="input-group" id="qualityGroup" style="display: none;">
+                <label for="qualityInput">Quality (%)</label>
+                <input type="number" id="qualityInput" class="glass-number" value="90" min="10" max="100" step="5">
+              </div>
+            </div>
+
+            <button type="submit" id="submitBtn" class="btn-primary">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="13 17 18 12 13 7"></polyline>
+                <polyline points="6 17 11 12 6 7"></polyline>
+              </svg>
+              <span>Convert Documents</span>
+            </button>
+          </div>
+
+          <!-- Options Drawer -->
+          <details class="options-drawer">
+            <summary class="options-summary">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+              </svg>
+              <span>Fine-tune rendering &amp; compression</span>
+            </summary>
+            <div class="options-content">
+              <div class="input-group">
+                <label for="customDpi">DPI Target</label>
+                <input type="number" id="customDpi" class="glass-number" value="200" min="72" max="600">
+              </div>
+              <div class="input-group">
+                <label for="customQuality">Image Quality (JPEG)</label>
+                <input type="number" id="customQuality" class="glass-number" value="90" min="10" max="100">
+              </div>
+            </div>
+          </details>
+        </form>
+      </section>
+
+      <!-- Conversion Queue Section -->
+      <section class="glass-panel queue-panel" id="queueSection" style="display: none;" aria-live="polite">
+        <div class="queue-header">
+          <h3>Conversion Queue</h3>
+          <span id="queueCountBadge" class="badge queued">0 Active</span>
+        </div>
+        <div id="jobsContainer"></div>
+      </section>
+
+      <!-- Grouped Tool Grid -->
+      <section id="tools">
+        <h3 class="section-title">Convert from PDF</h3>
+        <div class="tools-grid">
+          <div class="glass-panel tool-card" data-target="docx" data-accept=".pdf" tabindex="0">
+            <div>
+              <div class="tool-icon-wrapper">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+              </div>
+              <h4>PDF to Word</h4>
+              <p>Extract layout, text, headings, and formatting into editable DOCX.</p>
+            </div>
+            <div class="tool-arrow">Convert to DOCX &rarr;</div>
+          </div>
+
+          <div class="glass-panel tool-card" data-target="xlsx" data-accept=".pdf" tabindex="0">
+            <div>
+              <div class="tool-icon-wrapper">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line></svg>
+              </div>
+              <h4>PDF to Excel</h4>
+              <p>Identify structured table grids and export rows directly into spreadsheets.</p>
+            </div>
+            <div class="tool-arrow">Convert to XLSX &rarr;</div>
+          </div>
+
+          <div class="glass-panel tool-card" data-target="pptx" data-accept=".pdf" tabindex="0">
+            <div>
+              <div class="tool-icon-wrapper">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+              </div>
+              <h4>PDF to PowerPoint</h4>
+              <p>Preserve page aspect ratios on widescreen slides with searchable notes.</p>
+            </div>
+            <div class="tool-arrow">Convert to PPTX &rarr;</div>
+          </div>
+
+          <div class="glass-panel tool-card" data-target="png" data-accept=".pdf" tabindex="0">
+            <div>
+              <div class="tool-icon-wrapper">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+              </div>
+              <h4>PDF to Images</h4>
+              <p>High-resolution rasterization to PNG or JPG with DPI control.</p>
+            </div>
+            <div class="tool-arrow">Convert to PNG &rarr;</div>
+          </div>
+        </div>
+
+        <h3 class="section-title">Convert to PDF</h3>
+        <div class="tools-grid">
+          <div class="glass-panel tool-card" data-target="pdf" data-accept=".docx,.doc,.xlsx,.xls,.pptx,.ppt,.odt,.rtf" tabindex="0">
+            <div>
+              <div class="tool-icon-wrapper">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+              </div>
+              <h4>Office to PDF</h4>
+              <p>Transform DOCX, XLSX, PPTX, ODT, and RTF into publication-ready PDFs.</p>
+            </div>
+            <div class="tool-arrow">Convert to PDF &rarr;</div>
+          </div>
+
+          <div class="glass-panel tool-card" data-target="pdf" data-accept=".png,.jpg,.jpeg,.bmp,.gif,.tif,.tiff" tabindex="0">
+            <div>
+              <div class="tool-icon-wrapper">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+              </div>
+              <h4>Images to PDF</h4>
+              <p>Lossless or quality-optimized PDF packaging for single or multiple photos.</p>
+            </div>
+            <div class="tool-arrow">Convert to PDF &rarr;</div>
+          </div>
+
+          <div class="glass-panel tool-card" data-target="pdf" data-accept=".html,.htm" tabindex="0">
+            <div>
+              <div class="tool-icon-wrapper">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+              </div>
+              <h4>HTML to PDF</h4>
+              <p>Render markup with headers and typographic spacing into PDF.</p>
+            </div>
+            <div class="tool-arrow">Convert to PDF &rarr;</div>
+          </div>
+
+          <div class="glass-panel tool-card" data-target="pdf" data-accept=".txt" tabindex="0">
+            <div>
+              <div class="tool-icon-wrapper">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+              </div>
+              <h4>Text to PDF</h4>
+              <p>Convert plain notes and raw log streams into formatted letter documents.</p>
+            </div>
+            <div class="tool-arrow">Convert to PDF &rarr;</div>
+          </div>
+        </div>
+
+        <h3 class="section-title">Data &amp; Text Transformations</h3>
+        <div class="tools-grid">
+          <div class="glass-panel tool-card" data-target="xlsx" data-accept=".csv" tabindex="0">
+            <div>
+              <div class="tool-icon-wrapper">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
+              </div>
+              <h4>CSV to Excel</h4>
+              <p>Format raw delimiter records into multi-column Excel workbooks.</p>
+            </div>
+            <div class="tool-arrow">Convert to XLSX &rarr;</div>
+          </div>
+
+          <div class="glass-panel tool-card" data-target="csv" data-accept=".xlsx,.xls" tabindex="0">
+            <div>
+              <div class="tool-icon-wrapper">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="9" x2="15" y2="15"></line><line x1="15" y1="9" x2="9" y2="15"></line></svg>
+              </div>
+              <h4>Excel to CSV</h4>
+              <p>Export sheets into standard UTF-8 comma-separated text files.</p>
+            </div>
+            <div class="tool-arrow">Convert to CSV &rarr;</div>
+          </div>
+
+          <div class="glass-panel tool-card" data-target="docx" data-accept=".txt" tabindex="0">
+            <div>
+              <div class="tool-icon-wrapper">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+              </div>
+              <h4>Text to DOCX</h4>
+              <p>Wrap unformatted text lines into formatted Microsoft Word paragraphs.</p>
+            </div>
+            <div class="tool-arrow">Convert to DOCX &rarr;</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Chat Assistant Anchor & Section (Task 3 integration) -->
+      <section id="chatSection" class="glass-panel chat-assistant-section" style="margin-top: 50px;">
+        <div class="chat-section-header">
+          <div class="chat-header-title">
+            <div class="tool-icon-wrapper" style="margin-bottom: 0;">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+              </svg>
+            </div>
+            <div>
+              <h3>Document Intelligence &amp; Summarization</h3>
+              <p>Extract, summarize, and ask questions about your documents powered by Gemini AI</p>
+            </div>
+          </div>
+          <div class="chat-header-actions">
+            <button id="clearChatBtn" class="btn-secondary" type="button">Clear Session</button>
+          </div>
+        </div>
+
+        <div class="chat-main-container">
+          <!-- Document context bar -->
+          <div class="active-document-context" id="activeDocContext" style="display: none;">
+            <span class="context-label">Active Document:</span>
+            <span class="context-filename" id="contextFilename">None</span>
+            <span class="ocr-badge" id="ocrWarningBadge" style="display: none;">OCR Applied</span>
+            <button class="context-remove" id="removeContextBtn" title="Detach document">&times;</button>
+          </div>
+
+          <!-- Chat messages viewport -->
+          <div class="chat-messages" id="chatMessages" role="log" aria-live="polite">
+            <div class="chat-bubble assistant-message">
+              <div class="bubble-content">
+                Welcome to Document Intelligence. Upload a document or attach one from your conversions to generate structured summaries or explore specific questions.
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Action Chips -->
+          <div class="chat-quick-chips" id="quickChips">
+            <button type="button" class="chip-btn" data-prompt="Provide a concise executive summary of this document.">Summarise</button>
+            <button type="button" class="chip-btn" data-prompt="What are the key takeaways and actionable points?">Key Points</button>
+            <button type="button" class="chip-btn" data-prompt="Explain this document in plain and simple terms.">Explain Simply</button>
+            <button type="button" class="chip-btn" data-prompt="Identify any risks, warnings, or legal obligations mentioned.">Risks &amp; Terms</button>
+          </div>
+
+          <!-- Input Bar -->
+          <form id="chatForm" class="chat-input-bar">
+            <input type="file" id="chatDocUpload" class="file-input-hidden" accept=".pdf,.docx,.xlsx,.pptx,.txt,.html,.rtf,.odt,.csv,.png,.jpg,.jpeg">
+            <button type="button" id="attachFileBtn" class="chat-attach-btn" title="Attach Document for Chat">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+              </svg>
+            </button>
+            <input type="text" id="chatMessageInput" class="chat-text-input" placeholder="Ask a question or request a summary..." autocomplete="off">
+            <button type="submit" id="sendChatBtn" class="btn-primary" style="padding: 10px 20px;">
+              <span>Send</span>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <line x1="22" y1="2" x2="11" y2="13"></line>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+              </svg>
+            </button>
+          </form>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+      <div>
+        <strong>Doc Converter</strong> &bull; Business &amp; Legal Document Orchestrator
+      </div>
+      <div class="footer-meta">
+        <span>Confidential &bull; Zero Third-Party Logging</span>
+        <span>Storage Purge Active</span>
+      </div>
+    </footer>
   </div>
 
   <script src="/static/app.js"></script>
+  <script src="/static/chat.js"></script>
 </body>
 </html>

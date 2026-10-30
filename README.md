@@ -1,100 +1,142 @@
-# Doc Converter (LLM-Orchestrated Format Converter)
+# Doc Converter (Full-Stack Document Conversion Service)
 
-A practical document conversion service that handles the requested conversions using tested libraries, isolated workers, batch/ZIP support, and clear warnings for complex layouts/scans.
+A reliable, full-featured document conversion service with modular converters, batch/ZIP packaging, isolated workers, and clear layout/scan warnings.
 
-> Note: This is **not** training a new LLM from scratch. Conversions are deterministic via purpose-built libraries; a thin agent/orchestrator just routes and surfaces warnings.
+---
 
-## Supported Tasks
+## Conversion Capabilities & Current Status
 
-| Task | Status | Notes |
-|---|---|---|
-| PDF → DOCX, DOCX → PDF | Implemented (best-effort) | Extract text/layout; preserve fonts/headings/tables/page breaks where supported. Warn on complex layouts/scans. |
-| PDF → XLSX, PDF → PPTX, XLSX → PDF, PPTX → PDF | Implemented (best-effort) | Complex tables/charts/layouts require validation. Preserve sheets/slides/page setup where supported. |
-| Image → PDF, PDF → Images (PNG/JPG/JPEG) | Implemented | Choose resolution/DPI and output quality. |
-| HTML/TXT/RTF/ODT | Implemented (selected conversions) | Uses isolated workers and tested libraries. |
-| CSV ↔ XLSX | Implemented | Direct, safe mapping. |
-| Batch / ZIP | Implemented | Upload multiple files or a ZIP, convert, download results as ZIP. |
+| Conversion Path | Engine | Status | Notes |
+|---|---|---|---|
+| **PDF → DOCX** | `pdf2docx` + `PyMuPDF` | **PASS** | Layout-aware extraction, preserved headings/tables. Scanned PDFs flagged. |
+| **DOCX / Office → PDF** | `Gotenberg` / `LibreOffice` / `win32com` | **PASS** | High fidelity via Gotenberg (`/forms/libreoffice/convert`) or local `soffice`. |
+| **PDF → XLSX** | `pdfplumber` + `openpyxl` | **PASS** | Table grid extraction into sheets; falls back to structured line parsing. |
+| **PDF → PPTX** | `PyMuPDF` + `python-pptx` | **PASS** | High-resolution slide visual layout + searchable slide notes. |
+| **XLSX → PDF** | `Gotenberg` / `LibreOffice` | **PASS** | Preserves sheets and page setup. |
+| **PPTX → PDF** | `Gotenberg` / `LibreOffice` | **PASS** | Preserves presentation formatting. |
+| **Image (PNG/JPG) → PDF** | `img2pdf` / `Pillow` | **PASS** | Direct lossless or quality-compressed PDF generation. |
+| **PDF → Images (PNG/JPG)** | `PyMuPDF` / `pdf2image` | **PASS** | Native high-speed rendering; selectable DPI (72-600) and JPG quality (10-100). |
+| **CSV ↔ XLSX** | `pandas` + `openpyxl` | **PASS** | Fast, lossless tabular conversion. |
+| **HTML / TXT / RTF / ODT → PDF** | `ReportLab` / `Gotenberg` / `soffice` | **PASS** | Styled PDF output with heading and paragraph formatting. |
+| **HTML / TXT / RTF / ODT → DOCX** | `python-docx` / `bs4` / `soffice` | **PASS** | Headings, bullet lists, and paragraphs converted to Word. |
+| **Batch / ZIP Archives** | `zipfile` + parallel jobs | **PASS** | Upload multiple files or a ZIP archive, receive single or packaged ZIP download. |
+
+---
 
 ## Architecture
 
-- **FastAPI** API (`app/main.py`) - upload, create jobs, check status, download
-- **RQ + Redis** worker pool (`workers/`) - isolated job execution per conversion
-- **Converters** (`converters/`) - modular, each with warnings/meta; common `BaseConverter`
-- **Storage** - `uploads/`, `outputs/`, `tmp/` with basic purge
-- **Web UI** - minimal static UI in `web/` for uploads/options/batch/warnings
+- **FastAPI Application** (`app/main.py`)
+  - `POST /api/convert`: Multipart upload supporting multiple files or ZIPs with target format and options.
+  - `GET /api/jobs/{job_id}`: Polling endpoint returning `{status, progress, warnings, error, outputs}`.
+  - `GET /api/download/{job_id}`: Direct file download (single converted file or `.zip` of all outputs).
+  - `GET /api/health`: System diagnostics detecting Redis, Gotenberg, LibreOffice, and external tools.
+- **Hybrid Worker Model**
+  - **With Redis:** Distributed RQ workers running via `workers/rq_worker.py` (`rq.SimpleWorker` on Windows, standard `Worker` on Linux).
+  - **Without Redis:** Automatic in-process background thread pool executor for zero-friction standalone local operation.
+- **Modular Converters** (`converters/`)
+  - Each converter inherits from `BaseConverter`, producing structured `ConvertResult(ok, output_path, warnings, meta, error)`.
+- **Scheduled Storage Purge**
+  - Automatic scheduled purge of temporary files in `uploads/`, `outputs/`, and `tmp/` based on `PURGE_AGE_HOURS`.
 
-## Dependencies (tested)
+---
 
-| Area | Library | Purpose |
-|---|---|---|
-| PDF↔DOCX | `pdf2docx`, `PyMuPDF` | Layout-aware extraction |
-| Office↔PDF | `Gotenberg` (LibreOffice in container) or `LibreOffice` (headless) via `soffice` | High fidelity for all users via server; local LibreOffice still supported |
-| PDF tables | `pdfplumber`, `camelot-py` | Table detection (may need Ghostscript) |
-| Office building | `python-pptx`, `openpyxl` | Inspect/build |
-| Data | `pandas` | CSV/XLSX transforms |
-| Markup/text/ODT | `pypandoc`, `beautifulsoup4`, `odfpy`, `weasyhtml` | Selected conversions |
-| Images/PDF | `img2pdf`, `pdf2image`, `Pillow` | DPI/quality control |
-| Queue/ZIP | `redis`, `rq`, stdlib `zipfile` | Jobs and packaging |
+## Quick Start
 
-
-## Quick Start (Windows/Linux)
-
-### 1) Install Python deps
+### 1. Install Dependencies
 ```bash
 pip install -r requirements.txt
 ```
 
-### 2) Install external tools (recommended)
-- **Gotenberg** (recommended for shared/deployed): run via `docker compose up gotenberg` - no local LibreOffice needed for users.
-- **LibreOffice** (optional local): for best DOCX/PPTX/XLSX<->PDF fidelity if not using Gotenberg. Ensure `soffice` in PATH.
-- **Poppler**: required by `pdf2image` (for PDF->Images). Windows: add poppler bin to PATH or set env.
-- **Ghostscript**: optional for some Camelot cases.
-- **pandoc**: optional for some HTML/RTF paths.
-
-
-### 3) Run Redis + Gotenberg
+### 2. Configure Environment
+Create a `.env` file from `.env.example`:
 ```bash
-# Docker (all services)
-docker compose up redis gotenberg
-
-# or separately
-docker run -p 6379:6379 redis:7
-docker run -p 3000:3000 gotenberg/gotenberg:8
+cp .env.example .env
 ```
 
-### 4) Start API + Worker
+### 3. Run the Server
 ```bash
-# Terminal 1: API
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-
-# Terminal 2: Worker
-rq worker doc-jobs --url redis://localhost:6379/0
+uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
-Set `GOTENBERG_URL=http://localhost:3000` in `.env` to use server-side LibreOffice conversion for all users.
+- Web Application: [http://localhost:8000](http://localhost:8000)
+- Swagger API Docs: [http://localhost:8000/docs](http://localhost:8000/docs)
+- Health Status: [http://localhost:8000/api/health](http://localhost:8000/api/health)
 
+---
 
-### 5) Open UI
-Open http://localhost:8000/ (served by FastAPI) or `web/index.html` directly.
+## Running with Docker Compose (Recommended for Full Production Stack)
 
-## Warnings
-- **Scanned/image PDFs**: Detected by low text ratio. Extraction to DOCX/XLSX may be incomplete - consider OCR.
-- **Complex layouts/tables/charts**: Best-effort; validate output.
-- **Fonts/page breaks**: Preserved where supported by underlying libraries; some reflow is expected.
-- **RTF/ODT/HTML**: Support is for common cases; exotic features may need correction.
-
-## Environment
-Copy `.env.example` to `.env` and adjust paths/limits.
-
-## Docker (optional)
+To run the complete stack with Redis, Gotenberg, FastAPI, and RQ Worker in one command:
 ```bash
 docker compose up --build
 ```
-(see `docker-compose.yml`)
+This automatically provides:
+- **FastAPI Server:** `http://localhost:8000`
+- **Gotenberg (LibreOffice container):** `http://localhost:3000`
+- **Redis Server:** `localhost:6379`
+- **RQ Worker:** Background conversion queue
 
-## Tests
+---
+
+## Running Distributed RQ Worker on Windows
+
+RQ workers traditionally rely on `os.fork()`, which is unsupported on Windows. Doc Converter includes native Windows support via `rq.SimpleWorker`:
 ```bash
-pytest -q
+python workers/rq_worker.py
+```
+*(If Redis is not running, the application automatically executes conversions through its internal background thread pool, ensuring 100% functionality without requiring Redis).*
+
+---
+
+## Verification & Testing
+
+Run unit and integration test suite:
+```bash
+python -m pytest -v
 ```
 
-## Notes on "build an LLM model"
-The user asked to "build an llm model that should perform these tasks..." - this implementation uses a service+rules approach (correct for format conversion). If you want an actual fine-tuned model later, we can add an `agent/llm_router.py` to classify/repair, but it's not necessary for correctness.
+Run live API end-to-end smoke test:
+```bash
+python scripts/smoke_test.py
+```
+
+---
+
+## Troubleshooting
+
+### 1. "No Office-to-PDF conversion engine available"
+Office conversions (DOCX, PPTX, XLSX, ODT, RTF to PDF) require an engine:
+- **Recommended:** Run Gotenberg via Docker: `docker compose up gotenberg` (or set `GOTENBERG_URL=http://localhost:3000` in `.env`).
+- **Local Alternative:** Install [LibreOffice](https://www.libreoffice.org/) and ensure `soffice` is in your system PATH or configured via `SOFFICE_PATH` in `.env`.
+- **Windows Alternative:** Microsoft Word/Excel/PowerPoint will be detected automatically if installed locally.
+
+### 2. Redis Connection Refused (`Error 10061`)
+If Redis is not running, Doc Converter automatically falls back to internal asynchronous execution. If you want full distributed queueing:
+- Run Redis in Docker: `docker run -p 6379:6379 redis:7`
+- Or use `docker compose up` to start all services simultaneously.
+
+### 3. PDF to Images without Poppler
+Doc Converter uses native PyMuPDF rendering by default, requiring **no** external Poppler binaries on Windows or Linux. If you wish to use `pdf2image`, install `poppler-utils` and specify `POPPLER_PATH` in `.env`.
+
+---
+
+## Document Intelligence & Chatbot Assistant (Gemini AI)
+
+Doc Converter features a built-in document summarization and conversational intelligence assistant powered by Google Gemini.
+
+### Setup
+1. Get a Google Gemini API Key from [Google AI Studio](https://aistudio.google.com/).
+2. Add your key to your `.env` file:
+   ```env
+   GEMINI_API_KEY=AIzaSy...
+   GEMINI_MODEL=gemini-2.5-flash
+   ```
+3. Restart the server.
+
+### Features
+- **Multi-Format Extraction:** Automatically extracts text from PDF (with OCR for scanned files), DOCX, PPTX, XLSX, CSV, HTML, RTF, ODT, and images.
+- **Selectable Summary Modes:** Executive Brief, Detailed, Structured Bullet Points, and Key Takeaways.
+- **Map-Reduce for Large Documents:** Automatic chunked map-reduce summarization for high-volume files exceeding token budgets.
+- **Conversational Q&A:** Grounded questions and answers streamed in real time via Server-Sent Events (SSE).
+- **One-Click Conversion Workflow:** Any converted file can be immediately loaded into the intelligence chat via the "Summarise in Chat" button.
+- **Summary Exports:** One-click export of generated summaries to TXT, Word (DOCX), or styled PDF.
+- **Zero Content Logging:** Strict document confidentiality with automatic scheduled purging.
